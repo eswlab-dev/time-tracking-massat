@@ -1,5 +1,5 @@
-import e from 'express'
-import * as mondayService from '../services/monday-service'
+import e from "express"
+import * as mondayService from "../services/monday-service"
 // import transformationService from '../services/transformation-service';
 
 /*
@@ -10,21 +10,23 @@ import * as mondayService from '../services/monday-service'
    date and connect boards
 
 */
-export async function executeAction(req, res) {
+export async function trackEmployee(req, res) {
   const { shortLivedToken } = req.session
   const { payload } = req.body
 
   try {
     const { inboundFieldValues } = payload
     const { boardId, itemId, userId, designatedBoardId } = inboundFieldValues
-    console.log('file: monday-controller.ts -> line 16 -> executeAction -> boardId, itemId, userId ', boardId, itemId, userId)
+    console.log("file: monday-controller.ts -> line 16 -> executeAction -> boardId, itemId, userId ", boardId, itemId, userId)
     const designatedItemName = await mondayService.getDesignatedItemName(boardId, itemId, userId, shortLivedToken)
-    console.log('file: monday-controller.ts -> line 25 -> executeAction -> designatedItemName', designatedItemName)
+    console.log("file: monday-controller.ts -> line 25 -> executeAction -> designatedItemName", designatedItemName)
 
-    const isItemOpen = await mondayService.isDBItemOpen(designatedItemName, designatedBoardId, shortLivedToken)
+    const openItem = await mondayService.getOpenItem(designatedItemName, designatedBoardId, shortLivedToken)
+    console.log("executeAction -> openItem", openItem)
 
-    if(isItemOpen) {
-
+    if (openItem) {
+      console.log("executeAction -> openItem INSIDE IF", openItem)
+      await mondayService.endTracking(openItem.id, designatedBoardId, shortLivedToken)
     } else {
       await mondayService.addNewItem(designatedBoardId, designatedItemName, userId, shortLivedToken)
     }
@@ -32,7 +34,7 @@ export async function executeAction(req, res) {
     return res.status(200).send({})
   } catch (err) {
     console.error(err)
-    return res.status(500).send({ message: 'internal server error' })
+    return res.status(500).send({ message: "internal server error" })
   }
 }
 

@@ -1,9 +1,9 @@
-import {Router} from 'express';
-const router = Router();
+import { Router } from "express"
+const router = Router()
 
-import * as mondayController from '../controllers/monday-controller';
-import authenticationMiddleware from '../middlewares/authentication';
+import * as mondayController from "../controllers/monday-controller"
+import authenticationMiddleware from "../middlewares/authentication"
 
-router.post('/monday/execute_action', authenticationMiddleware, mondayController.executeAction);
+router.post("/monday/execute_action", authenticationMiddleware, mondayController.trackEmployee)
 
-export default router;
+export default router

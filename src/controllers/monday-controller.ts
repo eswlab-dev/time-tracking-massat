@@ -1,7 +1,12 @@
 import e from "express"
 import * as mondayService from "../services/monday-service"
 // import transformationService from '../services/transformation-service';
-
+/**
+ * HW
+ 1. when an item created in DB board
+ 2. add connect boards in the new item's columns in trackEmployee function
+ 
+ */
 /*
   1. export the name of the original item and the name of the user.
   2. find if there is an open item in the deisgnated board

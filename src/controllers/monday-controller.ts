@@ -1,4 +1,3 @@
-import e from "express"
 import * as mondayService from "../services/monday-service"
 // import transformationService from '../services/transformation-service';
 /**
@@ -41,6 +40,28 @@ export async function trackEmployee(req, res) {
     console.error(err)
     return res.status(500).send({ message: "internal server error" })
   }
+}
+
+export async function taskName(req, res) {
+  const { shortLivedToken } = req.session
+  const { payload } = req.body
+
+  try {
+    const { inboundFieldValues } = payload
+    const { boardId, itemId, userId, designatedBoardId } = inboundFieldValues
+    console.log("file: monday-controller.ts -> line 53 -> taskName -> boardId, itemId, userId, designatedBoardId", boardId, itemId, userId, designatedBoardId)
+    const designatedItemId = await mondayService.getDesignatedItemId(boardId, itemId, shortLivedToken)
+    console.log("file: monday-controller.ts -> line 54 -> taskName -> designatedItemId", designatedItemId)
+    const designatedItemName = await mondayService.getDesignatedItemName(designatedBoardId, designatedItemId, userId, shortLivedToken)
+    console.log("file: monday-controller.ts -> line 56 -> taskName -> designatedItemName", designatedItemName)
+    await mondayService.changeItemDetails(boardId, itemId,designatedItemName, userId, shortLivedToken)
+
+    return res.status(200).send({})
+  } catch (err) {
+    console.log(err)
+    return res.status(500).send({ message: "internal server error" })
+  }
+
 }
 
 // export async function getRemoteListOptions(req, res) {

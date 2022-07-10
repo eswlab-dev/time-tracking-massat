@@ -1,4 +1,5 @@
-import * as mondayService from "../services/monday-service"
+import * as mondayService from '../services/monday-service'
+// import { DesignatedItem } from '../models/item'
 // import transformationService from '../services/transformation-service';
 /**
  * HW
@@ -14,61 +15,66 @@ import * as mondayService from "../services/monday-service"
    date and connect boards
 
 */
-export async function trackEmployee(req, res) {
+
+interface DesignatedItem {
+  username: string
+  itemName: string
+}
+
+interface Item {
+  name: string
+  id: string
+}
+
+export async function trackEmployee(req, res): Promise<object> {
   const { shortLivedToken } = req.session
   const { payload } = req.body
 
   try {
     const { inboundFieldValues } = payload
     const { boardId, itemId, userId, designatedBoardId } = inboundFieldValues
-    console.log("file: monday-controller.ts -> line 16 -> executeAction -> boardId, itemId, userId ", boardId, itemId, userId)
-    const designatedItemName = await mondayService.getDesignatedItemName(boardId, itemId, userId, shortLivedToken)
-    console.log("file: monday-controller.ts -> line 25 -> executeAction -> designatedItemName", designatedItemName)
-
-    const openItem = await mondayService.getOpenItem(designatedItemName, designatedBoardId, shortLivedToken)
-    console.log("executeAction -> openItem", openItem)
+    console.log('file: monday-controller.ts -> line 16 -> executeAction -> boardId, itemId, userId ', boardId, itemId, userId)
+    const designatedItemName: DesignatedItem | undefined = await mondayService.getDesignatedItemName(boardId, itemId, userId, shortLivedToken)
+    const buildName: string = `${designatedItemName?.username} ➡️ ${designatedItemName?.itemName}`
+    console.log('file: monday-controller.ts -> line 25 -> executeAction -> designatedItemName', designatedItemName)
+    const openItem: Item | undefined = await mondayService.getOpenItem(buildName, designatedBoardId, shortLivedToken)
+    console.log('executeAction -> openItem', openItem)
 
     if (openItem) {
-      console.log("executeAction -> openItem INSIDE IF", openItem)
+      console.log('executeAction -> openItem INSIDE IF', openItem)
       await mondayService.endTracking(openItem.id, designatedBoardId, shortLivedToken)
     } else {
-      await mondayService.addNewItem(designatedBoardId, designatedItemName, userId, shortLivedToken)
+      await mondayService.addNewItem(designatedBoardId, buildName, itemId, userId, shortLivedToken)
     }
 
     return res.status(200).send({})
   } catch (err) {
     console.error(err)
-    return res.status(500).send({ message: "internal server error" })
+    return res.status(500).send({ message: 'internal server error' })
   }
 }
 
-export async function taskName(req, res) {
+export async function changeItemDetails(req, res): Promise<object> {
   const { shortLivedToken } = req.session
   const { payload } = req.body
 
   try {
     const { inboundFieldValues } = payload
     const { boardId, itemId, userId, designatedBoardId } = inboundFieldValues
-    console.log("file: monday-controller.ts -> line 53 -> taskName -> boardId, itemId, userId, designatedBoardId", boardId, itemId, userId, designatedBoardId)
-    const designatedItemId = await mondayService.getDesignatedItemId(boardId, itemId, shortLivedToken)
-    console.log("file: monday-controller.ts -> line 54 -> taskName -> designatedItemId", designatedItemId)
-    const designatedItemName = await mondayService.getDesignatedItemName(designatedBoardId, designatedItemId, userId, shortLivedToken)
-    console.log("file: monday-controller.ts -> line 56 -> taskName -> designatedItemName", designatedItemName)
-    await mondayService.changeItemDetails(boardId, itemId,designatedItemName, userId, shortLivedToken)
+    console.log('file: monday-controller.ts -> line 53 -> taskName -> boardId, itemId, userId, designatedBoardId', boardId, itemId, userId, designatedBoardId)
+    const designatedItemId: number | false | undefined = await mondayService.getDesignatedItemId(boardId, itemId, shortLivedToken)
+    console.log('file: monday-controller.ts -> line 54 -> taskName -> designatedItemId', designatedItemId)
+    if (designatedItemId) {
+      const designatedItemName: DesignatedItem | undefined = await mondayService.getDesignatedItemName(designatedBoardId, designatedItemId, userId, shortLivedToken)
+      console.log('file: monday-controller.ts -> line 56 -> taskName -> designatedItemName', designatedItemName)
+
+      const buildName: string = `${designatedItemName?.username} ➡️ ${designatedItemName?.itemName}`
+      await mondayService.changeItemDetails(boardId, itemId, buildName, userId, shortLivedToken)
+    }
 
     return res.status(200).send({})
   } catch (err) {
     console.log(err)
-    return res.status(500).send({ message: "internal server error" })
+    return res.status(500).send({ message: 'internal server error' })
   }
-
 }
-
-// export async function getRemoteListOptions(req, res) {
-//   try {
-//     return res.status(200).send(TRANSFORMATION_TYPES);
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).send({ message: 'internal server error' });
-//   }
-// }

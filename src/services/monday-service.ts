@@ -1,37 +1,7 @@
 import initMondayClient from 'monday-sdk-js'
+import * as Types from "../constants/Types.d"
 
-interface DesignatedItem {
-  username: string
-  itemName: string
-}
-
-interface Item {
-  name: string
-  id: string
-}
-
-interface Response {
-  data: Data
-  account_id: number
-}
-
-interface Data {
-  users: Array<any>
-  boards: Array<any>
-  Items: Array<any>
-  create_item: CreateItem
-}
-
-interface CreateItem {
-  id: string
-  column_values: Array<object>
-}
-
-interface Value {
-  linkedPulseIds: Array<any>
-}
-
-export async function getDesignatedItemName(boardId: number, itemId: number, userId: number, token: string | undefined): Promise<DesignatedItem | undefined> {
+export async function getDesignatedItemName(boardId: number, itemId: number, userId: number, token: string | undefined): Promise<Types.DesignatedItem | undefined> {
   try {
     const mondayClient = initMondayClient()
     await mondayClient.setToken(token)
@@ -48,12 +18,12 @@ export async function getDesignatedItemName(boardId: number, itemId: number, use
     }`
     console.log('file: monday-service.ts -> line 12 -> getItemDetails -> query', query)
 
-    const response: Response = await mondayClient.api(query)
+    const response: Types.Response = await mondayClient.api(query)
     console.log('file: monday-service.ts -> line 21 -> getDesignatedItemName -> response', response)
     const username: string = response?.data?.users[0].name
     const itemName: string = response?.data?.boards[0].items[0].name
     console.log('file: monday-service.ts -> line 24 -> getDesignatedItemName -> itemName', itemName)
-    const designatedItemName: DesignatedItem = {
+    const designatedItemName: Types.DesignatedItem = {
       username,
       itemName,
     }
@@ -79,9 +49,9 @@ export async function getDesignatedItemId(boardId, itemId, token): Promise<numbe
           }
       }`
     console.log('file: monday-service.ts -> line 45-> getDesignatedItemId -> query', query)
-    const response: Response = await mondayClient.api(query)
+    const response: Types.Response = await mondayClient.api(query)
     console.log('file: monday-service.ts -> line 51 -> getDesignatedItemId -> response', response)
-    const value: Value = JSON.parse(response.data.boards[0].items[0].column_values[0].value)
+    const value: Types.Value = JSON.parse(response.data.boards[0].items[0].column_values[0].value)
     console.log('file: monday-service.ts -> line 48 -> getDesignatedItemId -> value', value)
     const linkedPulsedId: number = value.linkedPulseIds[0].linkedPulseId
     console.log('file: monday-service.ts -> line 50 -> getDesignatedItemId -> linkedPulsedId', linkedPulsedId)
@@ -96,7 +66,7 @@ export async function getDesignatedItemId(boardId, itemId, token): Promise<numbe
   }
 }
 
-export async function getOpenItem(designatedItemName: string, designatedBoardId: number, token: string | undefined): Promise<Item | undefined> {
+export async function getOpenItem(designatedItemName: string, designatedBoardId: number, token: string | undefined): Promise<Types.Item | undefined> {
   try {
     const mondayClient = initMondayClient()
     await mondayClient.setToken(token)
@@ -115,9 +85,9 @@ export async function getOpenItem(designatedItemName: string, designatedBoardId:
     console.log('getOpenItem -> query', query)
     const response = await mondayClient.api(query)
     console.log('getOpenItem -> response', response)
-    const items: Item[] | Array<any> = response.data.boards[0].groups[0].items
+    const items: Types.Item[] | Array<any> = response.data.boards[0].groups[0].items
     console.log('getOpenItem -> items', items)
-    const item: Item = items.find((item) => item.name === designatedItemName)
+    const item: Types.Item = items.find((item) => item.name === designatedItemName)
     console.log('getOpenItem -> item', item)
     return item
   } catch (err) {
@@ -149,7 +119,7 @@ export async function addNewItem(designatedBoardId: number, designatedItemName: 
     }`
     console.log('addNewItem -> query', query)
 
-    const response: Response = await mondayClient.api(query)
+    const response: Types.Response = await mondayClient.api(query)
     console.log('file: monday-service.ts -> line 115 -> addNewItem -> response', response)
     console.log('file: monday-service.ts -> line 68 -> addNewItem -> response', response?.data)
     console.log('file: monday-service.ts -> line 68 -> addNewItem -> response', response?.data?.create_item?.column_values)
@@ -200,7 +170,7 @@ export async function changeItemDetails(boardId: number, itemId: number, designa
     }
   }`
   console.log('endTracking -> query', query)
-  const queryResponse: Response = await mondayClient.api(query)
+  const queryResponse: Types.Response = await mondayClient.api(query)
   console.log('endTracking -> queryResponse', queryResponse)
 
   const isTrackEnded: boolean = !!queryResponse?.data.boards[0]?.items[0]?.column_values[0]?.value
@@ -216,9 +186,9 @@ export async function changeItemDetails(boardId: number, itemId: number, designa
     }`
 
   console.log('getOpenItem -> query', queryItemsNames)
-  const queryItemsResponse: Response = await mondayClient.api(queryItemsNames)
+  const queryItemsResponse: Types.Response = await mondayClient.api(queryItemsNames)
   console.log('getOpenItem -> response', queryItemsResponse)
-  const items: Item[] | Array<any> = queryItemsResponse.data.boards[0].groups[0].items
+  const items: Types.Item[] | Array<any> = queryItemsResponse.data.boards[0].groups[0].items
   console.log('file: monday-service.ts -> line 236 -> changeItemDetails -> items', items)
 
   if (items.some((item) => item.name === designatedItemName)) await notify(userId, designatedItemName, itemId, token)

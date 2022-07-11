@@ -1,4 +1,5 @@
 import * as mondayService from '../services/monday-service'
+import * as Types from "../constants/Types.d"
 // import { DesignatedItem } from '../models/item'
 // import transformationService from '../services/transformation-service';
 /**
@@ -16,16 +17,6 @@ import * as mondayService from '../services/monday-service'
 
 */
 
-interface DesignatedItem {
-  username: string
-  itemName: string
-}
-
-interface Item {
-  name: string
-  id: string
-}
-
 export async function trackEmployee(req, res): Promise<object> {
   const { shortLivedToken } = req.session
   const { payload } = req.body
@@ -34,10 +25,10 @@ export async function trackEmployee(req, res): Promise<object> {
     const { inboundFieldValues } = payload
     const { boardId, itemId, userId, designatedBoardId } = inboundFieldValues
     console.log('file: monday-controller.ts -> line 16 -> executeAction -> boardId, itemId, userId ', boardId, itemId, userId)
-    const designatedItemName: DesignatedItem | undefined = await mondayService.getDesignatedItemName(boardId, itemId, userId, shortLivedToken)
+    const designatedItemName: Types.DesignatedItem | undefined = await mondayService.getDesignatedItemName(boardId, itemId, userId, shortLivedToken)
     const buildName: string = `${designatedItemName?.username} ➡️ ${designatedItemName?.itemName}`
     console.log('file: monday-controller.ts -> line 25 -> executeAction -> designatedItemName', designatedItemName)
-    const openItem: Item | undefined = await mondayService.getOpenItem(buildName, designatedBoardId, shortLivedToken)
+    const openItem: Types.Item | undefined = await mondayService.getOpenItem(buildName, designatedBoardId, shortLivedToken)
     console.log('executeAction -> openItem', openItem)
 
     if (openItem) {
@@ -65,7 +56,7 @@ export async function changeItemDetails(req, res): Promise<object> {
     const designatedItemId: number | false | undefined = await mondayService.getDesignatedItemId(boardId, itemId, shortLivedToken)
     console.log('file: monday-controller.ts -> line 54 -> taskName -> designatedItemId', designatedItemId)
     if (designatedItemId) {
-      const designatedItemName: DesignatedItem | undefined = await mondayService.getDesignatedItemName(designatedBoardId, designatedItemId, userId, shortLivedToken)
+      const designatedItemName: Types.DesignatedItem | undefined = await mondayService.getDesignatedItemName(designatedBoardId, designatedItemId, userId, shortLivedToken)
       console.log('file: monday-controller.ts -> line 56 -> taskName -> designatedItemName', designatedItemName)
 
       const buildName: string = `${designatedItemName?.username} ➡️ ${designatedItemName?.itemName}`

@@ -1,17 +1,17 @@
 import initMondayClient from 'monday-sdk-js'
 
 interface DesignatedItem {
-  username: string,
+  username: string
   itemName: string
 }
 
- interface Item {
-  name: string,
+interface Item {
+  name: string
   id: string
 }
 
 interface Response {
-  data: Data,
+  data: Data
   account_id: number
 }
 
@@ -23,7 +23,7 @@ interface Data {
 }
 
 interface CreateItem {
-  id: string,
+  id: string
   column_values: Array<object>
 }
 
@@ -49,7 +49,7 @@ export async function getDesignatedItemName(boardId: number, itemId: number, use
     console.log('file: monday-service.ts -> line 12 -> getItemDetails -> query', query)
 
     const response: Response = await mondayClient.api(query)
-    console.log("file: monday-service.ts -> line 21 -> getDesignatedItemName -> response", response)
+    console.log('file: monday-service.ts -> line 21 -> getDesignatedItemName -> response', response)
     const username: string = response?.data?.users[0].name
     const itemName: string = response?.data?.boards[0].items[0].name
     console.log('file: monday-service.ts -> line 24 -> getDesignatedItemName -> itemName', itemName)
@@ -80,7 +80,7 @@ export async function getDesignatedItemId(boardId, itemId, token): Promise<numbe
       }`
     console.log('file: monday-service.ts -> line 45-> getDesignatedItemId -> query', query)
     const response: Response = await mondayClient.api(query)
-    console.log("file: monday-service.ts -> line 51 -> getDesignatedItemId -> response", response)
+    console.log('file: monday-service.ts -> line 51 -> getDesignatedItemId -> response', response)
     const value: Value = JSON.parse(response.data.boards[0].items[0].column_values[0].value)
     console.log('file: monday-service.ts -> line 48 -> getDesignatedItemId -> value', value)
     const linkedPulsedId: number = value.linkedPulseIds[0].linkedPulseId
@@ -205,6 +205,24 @@ export async function changeItemDetails(boardId: number, itemId: number, designa
 
   const isTrackEnded: boolean = !!queryResponse?.data.boards[0]?.items[0]?.column_values[0]?.value
 
+  const queryItemsNames: string = ` { 
+    boards(ids:${boardId}) {
+      groups(ids: "new_group") {
+         items {
+            name
+          }
+        }
+      }
+    }`
+
+  console.log('getOpenItem -> query', queryItemsNames)
+  const queryItemsResponse: Response = await mondayClient.api(queryItemsNames)
+  console.log('getOpenItem -> response', queryItemsResponse)
+  const items: Item[] | Array<any> = queryItemsResponse.data.boards[0].groups[0].items
+  console.log('file: monday-service.ts -> line 236 -> changeItemDetails -> items', items)
+
+  if (items.some((item) => item.name === designatedItemName)) await notify(userId, designatedItemName, itemId, token)
+
   const columns: string = JSON.stringify({
     name: designatedItemName,
     person: { personsAndTeams: [{ id: userId, kind: 'person' }] },
@@ -230,4 +248,18 @@ export async function changeItemDetails(boardId: number, itemId: number, designa
 
   const groupResponse: Response = await mondayClient.api(groupMutation)
   console.log('endTracking -> groupResponse', groupResponse)
+}
+
+export async function notify(userId: number, designatedItemName: string, itemId: number, token: string | undefined): Promise<void> {
+  const mondayClient = initMondayClient()
+  await mondayClient.setToken(token)
+
+  const message = `Attention: there is already active item called ${designatedItemName}.`
+  const mutation = `mutation{
+    create_notification (user_id:${userId}, target_id:${itemId}, text:${JSON.stringify(message)}, target_type: Project){
+    text
+    }
+  }`
+  const respons: Response = await mondayClient.api(mutation)
+  console.log("file: monday-service.ts -> line 264 -> notify -> respons", respons)
 }

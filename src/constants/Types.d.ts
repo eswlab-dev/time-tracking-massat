@@ -8,7 +8,7 @@ export interface Item {
   id: string
 }
 
-export interface Response {
+export interface MondayResponse {
   data: Data
   account_id: number
 }
@@ -27,4 +27,9 @@ export interface CreateItem {
 
 export interface Value {
   linkedPulseIds: Array<any>
+}
+
+export interface UserTeamDetails {
+  id: number,
+  name: string
 }

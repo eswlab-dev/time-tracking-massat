@@ -1,6 +1,12 @@
 import initMondayClient from 'monday-sdk-js'
 import * as Types from '../constants/Types.d'
 
+/**
+ * checking if the user that clicked the button can add to the "Currently Tracking" column
+ * @returns {boolean | undefined} boolean or undefined
+ * undefined in case that any of the chosen column values are empty
+ */
+
 export async function checkIfUserCanAssign(boardId: number, itemId: number, userId: number, userTeamId: number | undefined, token: string | undefined): Promise<boolean | undefined> {
   try {
     const mondayClient = initMondayClient()
@@ -21,14 +27,14 @@ export async function checkIfUserCanAssign(boardId: number, itemId: number, user
 
     const res: Types.MondayResponse = await mondayClient.api(queryPersonsCol)
     console.log('file: monday-service.ts -> line 23 -> checkIfUserCanAssign -> res', res)
-    const colVal = res.data.boards[0].items[0].column_values
+    const colVal: {value: string}[] = res.data.boards[0].items[0].column_values
     console.log('file: monday-service.ts -> line 35 -> checkIfUserCanAssign -> userTeam', userTeamId)
     console.log('file: monday-service.ts -> line 30 -> checkIfUserCanAssign -> value', colVal)
 
     if (colVal.some((col: any) => !JSON.parse(col.value))) return undefined
 
-    const isUserCanAssign: boolean = colVal.some((col: any) => {
-      const value = JSON.parse(col.value)
+    const isUserCanAssign: boolean = colVal.some((col: {value: string}) => {
+      const value: Types.QueryValue = JSON.parse(col.value)
       if (value.personsAndTeams[0].kind === 'team') {
         return value.personsAndTeams[0].id === userTeamId
       } else {
@@ -42,6 +48,10 @@ export async function checkIfUserCanAssign(boardId: number, itemId: number, user
   }
 }
 
+
+/**
+ * In case that the user can assign, check if he is already assigned and exists on "Currently Tracking."
+ */
 export async function checkAndAssignUser(boardId: number, itemId: number, userId: number, token: string | undefined): Promise<Types.QueryValue | null | undefined> {
   try {
     const mondayClient = initMondayClient()
@@ -63,7 +73,7 @@ export async function checkAndAssignUser(boardId: number, itemId: number, userId
     const queryValue: null | Types.QueryValue = JSON.parse(queryRes.data.boards[0].items[0].column_values[0].value)
     console.log('file: monday-service.ts -> line 64 -> checkAndAssignUser -> queryValue', queryValue)
 
-    const mutationValue = queryValue ? JSON.stringify({ personsAndTeams: [] }) : JSON.stringify({ personsAndTeams: [{ id: userId, kind: 'person' }] })
+    const mutationValue: string = queryValue ? JSON.stringify({ personsAndTeams: [] }) : JSON.stringify({ personsAndTeams: [{ id: userId, kind: 'person' }] })
     console.log('mutationValue', JSON.stringify(mutationValue))
     const mutatePersonCol: string = `
       mutation {
@@ -247,31 +257,31 @@ export async function addNewItem(designatedBoardId: number, designatedItemName: 
   }
 }
 
-export async function endTracking(designatedBoardId, designatedItemId, token) {
+export async function endTracking(designatedBoardId: number | undefined, designatedItemId: string, token: string | undefined): Promise<void> {
   const mondayClient = initMondayClient()
   await mondayClient.setToken(token)
   const [date, time] = new Date().toISOString().replace('Z', '').split('T')
 
-  const columns = JSON.stringify({
+  const columns: string = JSON.stringify({
     date_2: { date, time: time.split('.')[0] },
     dup__of_is_open: { label: 'Done' },
   })
-  const query = `
+  const changeColMutation: string = `
     mutation{
       change_multiple_column_values(item_id:${designatedItemId},board_id:${designatedBoardId}, column_values:${JSON.stringify(columns)} ){
         id
       }
     }
   `
-  console.log('endTracking -> query', query)
-  const response = await mondayClient.api(query)
+  console.log('endTracking -> changeColMutation', changeColMutation)
+  const response: Types.MondayResponse = await mondayClient.api(changeColMutation)
   console.log('endTracking -> response', response)
-  const groupMutation = `mutation{
+  const groupMutation: string = `mutation{
   move_item_to_group(item_id:${designatedItemId}, group_id:"group_title"){
     id
   }
 }`
-  const groupResponse = await mondayClient.api(groupMutation)
+  const groupResponse: Types.MondayResponse = await mondayClient.api(groupMutation)
   console.log('endTracking -> groupResponse', groupResponse)
 }
 
@@ -346,13 +356,13 @@ export async function notify(userId: number, itemId: number, token: string | und
     await mondayClient.setToken(token)
 
     // const message = `Attention: there is already active item called ${designatedItemName}.`
-    const mutation = `mutation{
+    const notifyMutation: string = `mutation{
       create_notification (user_id:${userId}, target_id:${itemId}, text:${JSON.stringify(message)}, target_type: Project){
       text
       }
     }`
-    const respons: Response = await mondayClient.api(mutation)
-    console.log('file: monday-service.ts -> line 264 -> notify -> respons', respons)
+    const response: Types.MondayResponse = await mondayClient.api(notifyMutation)
+    console.log('file: monday-service.ts -> line 264 -> notify -> respons', response)
   } catch (err) {
     console.log(err)
   }
@@ -362,7 +372,7 @@ export async function getUserTeamDetails(userId: number, token: string | undefin
   try {
     const mondayClient = initMondayClient()
     await mondayClient.setToken(token)
-    const queryUserTeam = `
+    const queryUserTeam: string = `
     query {
       users(ids: ${userId}) {
         teams {
@@ -373,8 +383,8 @@ export async function getUserTeamDetails(userId: number, token: string | undefin
     }
     `
     const res: Types.MondayResponse = await mondayClient.api(queryUserTeam)
-    const userTeamId = res.data.users[0].teams[0].id
-    const userTeamName = res.data.users[0].teams[0].name
+    const userTeamId: number = res.data.users[0].teams[0].id
+    const userTeamName: string = res.data.users[0].teams[0].name
 
     return {
       id: userTeamId,

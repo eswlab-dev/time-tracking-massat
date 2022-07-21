@@ -27,13 +27,13 @@ export async function checkIfUserCanAssign(boardId: number, itemId: number, user
 
     const res: Types.MondayResponse = await mondayClient.api(queryPersonsCol)
     console.log('file: monday-service.ts -> line 23 -> checkIfUserCanAssign -> res', res)
-    const colVal: {value: string}[] = res.data.boards[0].items[0].column_values
+    const colVal: { value: string }[] = res.data.boards[0].items[0].column_values
     console.log('file: monday-service.ts -> line 35 -> checkIfUserCanAssign -> userTeam', userTeamId)
     console.log('file: monday-service.ts -> line 30 -> checkIfUserCanAssign -> value', colVal)
 
     if (colVal.some((col: any) => !JSON.parse(col.value))) return undefined
 
-    const isUserCanAssign: boolean = colVal.some((col: {value: string}) => {
+    const isUserCanAssign: boolean = colVal.some((col: { value: string }) => {
       const value: Types.QueryValue = JSON.parse(col.value)
       if (value.personsAndTeams[0].kind === 'team') {
         return value.personsAndTeams[0].id === userTeamId
@@ -47,7 +47,6 @@ export async function checkIfUserCanAssign(boardId: number, itemId: number, user
     console.log(err)
   }
 }
-
 
 /**
  * In case that the user can assign, check if he is already assigned and exists on "Currently Tracking."
@@ -163,38 +162,6 @@ export async function getDesignatedItemName(boardId: number, itemId: number, use
   }
 }
 
-// export async function getDesignatedItemId(boardId, itemId, token): Promise<number | false | undefined> {
-//   try {
-//     const mondayClient = initMondayClient()
-//     await mondayClient.setToken(token)
-//     const query = `{
-//           boards(ids: ${boardId}) {
-//             items(ids: ${itemId}) {
-//               name
-//               column_values(ids: "connect_boards1") {
-//                 value
-//               }
-//             }
-//           }
-//       }`
-//     console.log('file: monday-service.ts -> line 45-> getDesignatedItemId -> query', query)
-//     const response: Types.MondayResponse = await mondayClient.api(query)
-//     console.log('file: monday-service.ts -> line 51 -> getDesignatedItemId -> response', response)
-//     const value: Types.Value = JSON.parse(response.data.boards[0].items[0].column_values[0].value)
-//     console.log('file: monday-service.ts -> line 48 -> getDesignatedItemId -> value', value)
-//     const linkedPulsedId: number = value.linkedPulseIds[0].linkedPulseId
-//     console.log('file: monday-service.ts -> line 50 -> getDesignatedItemId -> linkedPulsedId', linkedPulsedId)
-//     if (response?.data?.boards[0]?.items[0]?.name.includes('➡️')) {
-//       console.log('file: monday-service.ts -> line 57 -> getDesignatedItemId -> response?.data?.boards[0]?.items[0]?.name', response?.data?.boards[0]?.items[0]?.name)
-//       return false
-//     } else {
-//       return linkedPulsedId
-//     }
-//   } catch (err) {
-//     console.log(err)
-//   }
-// }
-
 export async function getDesignatedItem(designatedItemName: string, designatedBoardId: number, token: string | undefined): Promise<Types.Item | undefined> {
   try {
     const mondayClient = initMondayClient()
@@ -284,71 +251,6 @@ export async function endTracking(designatedBoardId: number | undefined, designa
   const groupResponse: Types.MondayResponse = await mondayClient.api(groupMutation)
   console.log('endTracking -> groupResponse', groupResponse)
 }
-
-// export async function changeItemDetails(boardId: number, itemId: number, designatedItemName: string, userId: number, token: string | undefined): Promise<void> {
-//   console.log('file: monday-service.ts -> line 147 -> changeItemDetails -> boardId, itemId,designatedItemName', boardId, itemId, designatedItemName)
-//   const mondayClient = initMondayClient()
-//   await mondayClient.setToken(token)
-
-//   const query: string = `{
-//     boards(ids: ${boardId}) {
-//       items(ids: ${itemId}) {
-//         column_values(ids: "date_2") {
-//           value
-//         }
-//       }
-//     }
-//   }`
-//   console.log('endTracking -> query', query)
-//   const queryResponse: Types.MondayResponse = await mondayClient.api(query)
-//   console.log('endTracking -> queryResponse', queryResponse)
-
-//   const isTrackEnded: boolean = !!queryResponse?.data.boards[0]?.items[0]?.column_values[0]?.value
-
-//   const queryItemsNames: string = ` {
-//     boards(ids:${boardId}) {
-//       groups(ids: "new_group") {
-//          items {
-//             name
-//           }
-//         }
-//       }
-//     }`
-
-//   console.log('getOpenItem -> query', queryItemsNames)
-//   const queryItemsResponse: Types.MondayResponse = await mondayClient.api(queryItemsNames)
-//   console.log('getOpenItem -> response', queryItemsResponse)
-//   const items: Types.Item[] | Array<any> = queryItemsResponse.data.boards[0].groups[0].items
-//   console.log('file: monday-service.ts -> line 236 -> changeItemDetails -> items', items)
-
-//   // if (items.some((item) => item.name === designatedItemName)) await notify(userId, designatedItemName, itemId, token)
-
-//   const columns: string = JSON.stringify({
-//     name: designatedItemName,
-//     person: { personsAndTeams: [{ id: userId, kind: 'person' }] },
-//     dup__of_is_open: { label: isTrackEnded ? 'Done' : 'Tracking' },
-//   })
-
-//   const mutation: string = `
-//   mutation{
-//     change_multiple_column_values(item_id:${itemId},board_id:${boardId}, column_values: ${JSON.stringify(columns)}){
-//       id
-//     }
-//   }
-// `
-
-//   console.log('endTracking -> mutation', mutation)
-//   const response: Response = await mondayClient.api(mutation)
-//   console.log('endTracking -> response', response)
-//   const groupMutation: string = `mutation{
-//                              move_item_to_group(item_id:${itemId}, group_id:${isTrackEnded ? 'group_title' : 'new_group'}){
-//                               id
-//                               }
-//                           }`
-
-//   const groupResponse: Response = await mondayClient.api(groupMutation)
-//   console.log('endTracking -> groupResponse', groupResponse)
-// }
 
 export async function notify(userId: number, itemId: number, token: string | undefined, message: string): Promise<void> {
   try {

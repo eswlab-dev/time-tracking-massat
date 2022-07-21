@@ -18,6 +18,16 @@ export interface Data {
   boards: Array<any>
   Items: Array<any>
   create_item: CreateItem
+  create_board: CreateBoard
+}
+
+export interface QueryValue {
+    changed_at: string
+    personsAndTeams: any[]
+}
+
+interface CreateBoard {
+  id: number
 }
 
 export interface CreateItem {

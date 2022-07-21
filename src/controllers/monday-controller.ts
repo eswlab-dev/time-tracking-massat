@@ -29,10 +29,17 @@ export async function trackEmployee(req, res): Promise<object> {
     console.log("file: monday-controller.ts -> line 29 -> trackEmployee -> isUserCanAssign", isUserCanAssign)
 
     if(isUserCanAssign) {
-      const designatedBoardId = await mondayService.getDesignatedBoardId(UserTeamDetails?.name, shortLivedToken)
-      const isUserAssigned = await mondayService.checkAndAssignUser(boardId, itemId, userId, shortLivedToken)
+      const designatedItemName: Types.DesignatedItem | undefined = await mondayService.getDesignatedItemName(boardId, itemId, userId, shortLivedToken)
+      const buildName: string = `${designatedItemName?.username} ➡️ ${designatedItemName?.itemName}`
+      const designatedBoardId: number | undefined = await mondayService.getDesignatedBoardId(UserTeamDetails?.name, shortLivedToken)
+      const isUserAssigned: Types.QueryValue | null | undefined = await mondayService.checkAndAssignUser(boardId, itemId, userId, shortLivedToken)
       console.log("file: monday-controller.ts -> line 33 -> trackEmployee -> isUserAssigned", isUserAssigned)
-
+      if(isUserAssigned) {
+        const designatedItem: Types.Item | undefined = await mondayService.getDesignatedItem(buildName, designatedBoardId!, shortLivedToken)
+        await mondayService.endTracking(designatedBoardId, designatedItem!.id, shortLivedToken)
+      } else {
+        await mondayService.addNewItem(designatedBoardId!, buildName, userId, shortLivedToken)
+      }
 
 
     } else if(isUserCanAssign === undefined) {
